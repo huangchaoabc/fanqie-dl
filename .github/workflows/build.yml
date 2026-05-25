@@ -17,26 +17,24 @@ jobs:
         with:
           targets: aarch64-linux-android
 
-      - name: Install Android NDK & Cross Compile Toolchain
+      - name: Install Android NDK & Build Dependencies
         run: |
-          apt-get update && apt-get install -y gcc-aarch64-linux-android
+          apt-get update && apt-get install -y \
+            gcc-aarch64-linux-android \
+            libssl-dev \
+            pkg-config
+
+      - name: Set Env for Cross Compile & Vendored OpenSSL
+        run: |
           echo 'CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=aarch64-linux-android-gcc' >> $GITHUB_ENV
+          echo 'OPENSSL_STATIC=1' >> $GITHUB_ENV
+          echo 'OPENSSL_VENDORED=1' >> $GITHUB_ENV
 
       - name: Build for Termux (aarch64)
         run: cargo build --release --target aarch64-linux-android
 
-      - name: Upload Termux Binary as Artifact
+      - name: Upload Termux Binary
         uses: actions/upload-artifact@v4
         with:
           name: fanqie-dl-termux
           path: target/aarch64-linux-android/release/fanqie-dl
-
-      - name: Upload to GitHub Release
-        uses: softprops/action-gh-release@v1
-        if: github.ref == 'refs/heads/master'
-        with:
-          tag_name: termux-build-${{ github.sha }}
-          name: Termux Build ${{ github.sha }}
-          files: target/aarch64-linux-android/release/fanqie-dl
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
