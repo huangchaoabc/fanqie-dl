@@ -1,17 +1,32 @@
-name: Build FanqieDL
+name: Build FanqieDL (Linux PC Only)
+
 on:
   push:
-    branches: [master]
+    branches: [ master ]
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - run: sudo apt update && sudo apt install -y libssl-dev pkg-config libboost-all-dev
-      - run: cargo build --release
-      - uses: actions/upload-artifact@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install all required system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libssl-dev pkg-config cmake build-essential \
+            libboost-all-dev libfmt-dev libllvm-dev
+
+      - name: Build with full debug info (see all errors)
+        run: cargo build --release -- --error-limit=0
+
+      - name: Upload Linux binary
+        uses: actions/upload-artifact@v4
         with:
           name: fanqie-dl-linux
           path: target/release/fanqie-dl
