@@ -12,26 +12,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Rust
+      - name: Install Rust + Android Target
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android
 
-      - name: Install Android NDK & Build Dependencies
-        run: |
-          apt-get update && apt-get install -y \
-            gcc-aarch64-linux-android \
-            libssl-dev \
-            pkg-config
+      # 用官方交叉编译工具，不碰 apt-get
+      - name: Install cross-compile toolchain
+        uses: taiki-e/install-action@cross
+        with:
+          cross: latest
 
-      - name: Set Env for Cross Compile & Vendored OpenSSL
+      # 强制静态链接 OpenSSL，避开系统依赖
+      - name: Build with cross (no apt needed)
         run: |
-          echo 'CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=aarch64-linux-android-gcc' >> $GITHUB_ENV
-          echo 'OPENSSL_STATIC=1' >> $GITHUB_ENV
-          echo 'OPENSSL_VENDORED=1' >> $GITHUB_ENV
-
-      - name: Build for Termux (aarch64)
-        run: cargo build --release --target aarch64-linux-android
+          cross build --release --target aarch64-linux-android
+        env:
+          OPENSSL_STATIC: 1
+          OPENSSL_VENDORED: 1
 
       - name: Upload Termux Binary
         uses: actions/upload-artifact@v4
