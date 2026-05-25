@@ -1,38 +1,17 @@
-name: Build fanqie-dl for Termux
-
+name: Build FanqieDL
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install Rust + Android Target
-        uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: sudo apt update && sudo apt install -y libssl-dev pkg-config libboost-all-dev
+      - run: cargo build --release
+      - uses: actions/upload-artifact@v4
         with:
-          targets: aarch64-linux-android
-
-      # 用官方交叉编译工具，不碰 apt-get
-      - name: Install cross-compile toolchain
-        uses: taiki-e/install-action@cross
-        with:
-          cross: latest
-
-      # 强制静态链接 OpenSSL，避开系统依赖
-      - name: Build with cross (no apt needed)
-        run: |
-          cross build --release --target aarch64-linux-android
-        env:
-          OPENSSL_STATIC: 1
-          OPENSSL_VENDORED: 1
-
-      - name: Upload Termux Binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: fanqie-dl-termux
-          path: target/aarch64-linux-android/release/fanqie-dl
+          name: fanqie-dl-linux
+          path: target/release/fanqie-dl
